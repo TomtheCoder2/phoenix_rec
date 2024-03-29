@@ -4,9 +4,19 @@ use std::io::{Read, Write};
 use std::sync::Mutex;
 use std::time::Duration;
 use bincode::deserialize;
-use crate::Data;
+use lz4_compression::prelude::compress;
+use crate::{Data, SERVER};
 
 static DATA_QUEUE: Mutex<Vec<Data>> = Mutex::new(Vec::new());
+
+#[macro_export]
+macro_rules! debug {
+    ($($arg:tt)*) => {
+        if cfg!(debug_assertions) {
+            println!($($arg)*);
+        }
+    };
+}
 
 fn handle_client(mut stream: TcpStream) {
     let mut data = [0 as u8; 50]; // using 50 byte buffer
@@ -17,10 +27,10 @@ fn handle_client(mut stream: TcpStream) {
                 if n == 0 {
                     break;
                 }
-                println!("loop");
+                debug!("loop");
                 // print received data
                 let text = String::from_utf8_lossy(&data).to_string().trim_matches(char::from(0)).to_string();
-                println!("Received data: {}, len: {}", text, text.len());
+                debug!("Received data: {}, len: {}", text, text.len());
                 if text == "hello" {
                     stream.write(b"hello").unwrap();
                 }
@@ -37,25 +47,26 @@ fn handle_client(mut stream: TcpStream) {
                 }
                 // send all data from the queue
                 let mut queue = DATA_QUEUE.lock().unwrap().clone();
-                println!("Queue: {:?}", queue);
+                debug!("Queue: {:?}", queue);
                 let data = bincode::serialize(&queue);
                 let data_type: Vec<Data> = deserialize(&bincode::serialize(&queue).unwrap()).unwrap();
-                println!("Data type: {:?}", data_type);
-                if queue.len() > 0 {
-                    println!("Sending data: {:?}", queue);
-                    match data {
-                        Ok(d) => {
-                            // first send the length of the data
-                            stream.write(&(d.len() as u32).to_le_bytes()).unwrap();
-                            dbg!(&(d.len() as u32).to_le_bytes());
-                            stream.write(&d).unwrap();
-                            println!("Sent data: {:?}", d);
-                            queue.clear();
-                            DATA_QUEUE.lock().unwrap().clear();
-                        }
-                        Err(e) => {
-                            println!("Failed to serialize data: {}", e);
-                        }
+                debug!("Data type: {:?}", data_type);
+                debug!("Sending data: {:?}", queue);
+                match data {
+                    Ok(d) => {
+                        debug!("length before compression: {}", d.len());
+                        let d = compress(&d);
+                        debug!("length after compression: {}", d.len());
+                        // first send the length of the data
+                        stream.write(&(d.len() as u32).to_le_bytes()).unwrap();
+                        debug!("len: {:?}", (d.len() as u32).to_le_bytes());
+                        stream.write(&d).unwrap();
+                        debug!("Sent data: {:?}", d);
+                        queue.clear();
+                        DATA_QUEUE.lock().unwrap().clear();
+                    }
+                    Err(e) => {
+                        debug!("Failed to serialize data: {}", e);
                     }
                 }
             }
@@ -64,6 +75,7 @@ fn handle_client(mut stream: TcpStream) {
 }
 
 pub fn create_server() {
+    SERVER.store(true, std::sync::atomic::Ordering::SeqCst);
     let listener = TcpListener::bind("0.0.0.0:3333").unwrap();
     // accept connections and process them, spawning a new thread for each one
     println!("Server listening on port 3333");
@@ -85,12 +97,12 @@ pub fn create_server() {
             }
         }
     }
-    println!("Terminated_server");
+    println!("Can't accept any more connections");
     // close the socket server
     drop(listener);
 }
 
 pub fn add_data(data: Data) {
-    println!("Adding data: {:?}", data);
+    debug!("Adding data: {:?}", data);
     DATA_QUEUE.lock().unwrap().push(data);
 }

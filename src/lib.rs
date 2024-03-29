@@ -6,11 +6,14 @@ use data_types::DataType;
 use std::fmt::{Debug, Display};
 use std::fs::OpenOptions;
 use std::io::Write;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering::SeqCst;
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
 use crate::Data::{RecordData, RecordDataOption};
+use crate::server::add_data;
 
 /// Directions
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Display)]
@@ -83,6 +86,7 @@ impl RecData {
 }
 
 static REC_DATA: Mutex<RecData> = Mutex::new(RecData::new());
+static SERVER: AtomicBool = AtomicBool::new(false);
 
 /// stands for lock_mutex
 macro_rules! lm {
@@ -103,13 +107,13 @@ pub fn get_data_name() -> String {
     println!("COMMANDS: {:?}", lm!(REC_DATA).commands);
     "data_".to_string()
         + &*lm!(REC_DATA)
-            .commands
-            .iter()
-            .map(|c| c.to_string())
-            .collect::<Vec<String>>()
-            .join("_")
-            .replace(' ', "")
-            .to_string()
+        .commands
+        .iter()
+        .map(|c| c.to_string())
+        .collect::<Vec<String>>()
+        .join("_")
+        .replace(' ', "")
+        .to_string()
 }
 
 pub fn save_data(mut data: Vec<DataType>) {
@@ -137,14 +141,16 @@ pub fn save_data(mut data: Vec<DataType>) {
         }
     }
     let start_time = lm!(REC_DATA).start_time;
-    lm!(REC_DATA).data.push(RecordData(
+    let rec_data = RecordData(
         SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_millis()
             - start_time,
         data.clone(),
-    ));
+    );
+    if SERVER.load(SeqCst) { add_data(rec_data.clone()); }
+    lm!(REC_DATA).data.push(rec_data);
 }
 
 pub fn save_record_data(data: Data) {
@@ -222,9 +228,9 @@ pub fn write_data(file_name: String) {
                 .collect::<Vec<String>>()
                 .join(", ")
         )
-        .as_bytes(),
+            .as_bytes(),
     )
-    .unwrap();
+        .unwrap();
     file.write_all(b"# Phoenix data\n").unwrap();
     file.write_all(format!("# {}\n", get_data_name()).as_bytes())
         .unwrap();
@@ -263,9 +269,9 @@ pub fn write_data(file_name: String) {
                             .collect::<Vec<String>>()
                             .join(", ")
                     )
-                    .as_bytes(),
+                        .as_bytes(),
                 )
-                .unwrap();
+                    .unwrap();
             }
             Data::Command(s) => {
                 file.write_all(format!("# {}\n", s).as_bytes()).unwrap();

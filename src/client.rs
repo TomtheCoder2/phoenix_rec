@@ -1,7 +1,8 @@
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::str::from_utf8;
-use crate::{Data, save_record_data};
+use lz4_compression::prelude::decompress;
+use crate::{Data, debug, save_record_data};
 
 pub fn create_client() {
     let args = std::env::args().collect::<Vec<String>>();
@@ -39,10 +40,11 @@ pub fn create_client() {
                 let len = u32::from_le_bytes(data);
                 let mut data = vec![0u8; len as usize];
                 stream.read_exact(&mut data).unwrap();
-                println!("Received data: {:?}", data);
+                debug!("Received data: {:?}", data);
                 // convert back to data type
+                let data = decompress(&data).unwrap();
                 let data: Vec<Data> = bincode::deserialize(&data).unwrap();
-                println!("Received data: {:?}", data);
+                debug!("Received data: {:?}", data);
                 for d in data {
                     save_record_data(d);
                 }
