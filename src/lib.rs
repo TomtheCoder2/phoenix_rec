@@ -91,12 +91,18 @@ static SERVER: AtomicBool = AtomicBool::new(false);
 pub fn set_server(b: bool) {
     SERVER.store(b, SeqCst);
 }
-
 /// stands for lock_mutex
 macro_rules! lm {
     ($mutex:expr) => {
         $mutex.lock().expect("Mutex poisoned")
     };
+}
+pub fn get_rec_data() -> RecData {
+    lm!(REC_DATA).clone()
+}
+
+pub fn get_rec_data_len() -> usize {
+    lm!(REC_DATA).data.len()
 }
 
 pub fn add_command(command: Command) {
