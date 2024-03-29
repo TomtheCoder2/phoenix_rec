@@ -4,7 +4,7 @@ use std::io::{Read, Write};
 use std::sync::Mutex;
 use std::time::Duration;
 use bincode::deserialize;
-use rec::Data;
+use crate::Data;
 
 static DATA_QUEUE: Mutex<Vec<Data>> = Mutex::new(Vec::new());
 
@@ -31,7 +31,7 @@ fn handle_client(mut stream: TcpStream) {
                     break;
                 }
             }
-            Err(e) => {
+            Err(_e) => {
                 if DATA_QUEUE.lock().unwrap().is_empty() {
                     continue;
                 }

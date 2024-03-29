@@ -1,6 +1,6 @@
-use rec::data_types::DataType;
-use tcp::server::{add_data, create_server};
-use rec::Data;
+use phoenix_rec::data_types::DataType;
+use phoenix_rec::server::{add_data, create_server};
+use phoenix_rec::Data;
 
 fn main() {
     create_server();
