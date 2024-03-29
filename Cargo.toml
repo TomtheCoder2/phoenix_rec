@@ -1,6 +1,6 @@
 [package]
 name = "phoenix-rec"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 description = "A simple Recording and sending repo for recorded data on the ev3"
 license = "MIT"
