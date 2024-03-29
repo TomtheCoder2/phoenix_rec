@@ -88,6 +88,10 @@ impl RecData {
 static REC_DATA: Mutex<RecData> = Mutex::new(RecData::new());
 static SERVER: AtomicBool = AtomicBool::new(false);
 
+pub fn set_server(b: bool) {
+    SERVER.store(b, SeqCst);
+}
+
 /// stands for lock_mutex
 macro_rules! lm {
     ($mutex:expr) => {

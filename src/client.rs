@@ -38,6 +38,9 @@ pub fn create_client() {
             while let Ok(_) = stream.read(&mut data) {
                 // first 4 bytes are the length of the data
                 let len = u32::from_le_bytes(data);
+                if len == 0 {
+                    break;
+                }
                 let mut data = vec![0u8; len as usize];
                 stream.read_exact(&mut data).unwrap();
                 debug!("Received data: {:?}", data);

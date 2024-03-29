@@ -1,6 +1,7 @@
 use std::thread;
 use std::net::{TcpListener, TcpStream, Shutdown};
 use std::io::{Read, Write};
+use std::sync::atomic::AtomicBool;
 use std::sync::Mutex;
 use std::time::Duration;
 use bincode::deserialize;
@@ -8,6 +9,7 @@ use lz4_compression::prelude::compress;
 use crate::{Data, SERVER};
 
 static DATA_QUEUE: Mutex<Vec<Data>> = Mutex::new(Vec::new());
+static STOP_SERVER: AtomicBool = AtomicBool::new(false);
 
 #[macro_export]
 macro_rules! debug {
@@ -38,10 +40,18 @@ fn handle_client(mut stream: TcpStream) {
                 if text.contains("close") {
                     println!("Terminating connection");
                     stream.shutdown(Shutdown::Both).unwrap();
+                    SERVER.store(false, std::sync::atomic::Ordering::SeqCst);
                     break;
                 }
             }
             Err(_e) => {
+                if STOP_SERVER.load(std::sync::atomic::Ordering::SeqCst) {
+                    println!("Terminating connection");
+                    stream.write(&(0u32).to_le_bytes()).unwrap();
+                    stream.shutdown(Shutdown::Both).unwrap();
+                    SERVER.store(false, std::sync::atomic::Ordering::SeqCst);
+                    break;
+                }
                 if DATA_QUEUE.lock().unwrap().is_empty() {
                     continue;
                 }
@@ -75,6 +85,10 @@ fn handle_client(mut stream: TcpStream) {
 }
 
 pub fn create_server() {
+    if SERVER.load(std::sync::atomic::Ordering::SeqCst) {
+        println!("Server already running");
+        return;
+    }
     SERVER.store(true, std::sync::atomic::Ordering::SeqCst);
     let listener = TcpListener::bind("0.0.0.0:3333").unwrap();
     // accept connections and process them, spawning a new thread for each one
@@ -105,4 +119,9 @@ pub fn create_server() {
 pub fn add_data(data: Data) {
     debug!("Adding data: {:?}", data);
     DATA_QUEUE.lock().unwrap().push(data);
+}
+
+pub fn stop_server() {
+    SERVER.store(false, std::sync::atomic::Ordering::SeqCst);
+    STOP_SERVER.store(true, std::sync::atomic::Ordering::SeqCst);
 }
