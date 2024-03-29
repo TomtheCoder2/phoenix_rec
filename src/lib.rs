@@ -56,7 +56,8 @@ pub enum Data {
     RecordDataOption(u128, Vec<Option<DataType>>),
 }
 
-struct RecData {
+#[derive(Debug, Clone)]
+pub struct RecData {
     /// first the format of the current data
     data: Vec<Data>,
     commands: Vec<Command>,
