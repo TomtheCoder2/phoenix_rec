@@ -90,6 +90,7 @@ pub fn create_server() {
         return;
     }
     SERVER.store(true, std::sync::atomic::Ordering::SeqCst);
+    STOP_SERVER.store(false, std::sync::atomic::Ordering::SeqCst);
     let listener = TcpListener::bind("0.0.0.0:3333").unwrap();
     // accept connections and process them, spawning a new thread for each one
     println!("Server listening on port 3333");
