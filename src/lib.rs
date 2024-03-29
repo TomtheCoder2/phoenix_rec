@@ -102,8 +102,16 @@ pub fn get_rec_data() -> RecData {
     lm!(REC_DATA).clone()
 }
 
-pub fn get_rec_data_len() -> usize {
+pub fn get_rec_len() -> usize {
     lm!(REC_DATA).data.len()
+}
+
+pub fn get_rec_index(index: usize) -> Data {
+    lm!(REC_DATA).data[index].clone()
+}
+
+pub fn get_rec_start_time() -> u128 {
+    lm!(REC_DATA).start_time
 }
 
 pub fn add_command(command: Command) {
@@ -243,6 +251,9 @@ pub fn write_data(file_name: String) {
     )
         .unwrap();
     file.write_all(b"# Phoenix data\n").unwrap();
+    // todo: write time and date in this format: hh:mm:ss dd.mm.yyyy
+
+
     file.write_all(format!("# {}\n", get_data_name()).as_bytes())
         .unwrap();
     // todo reimplement this
