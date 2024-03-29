@@ -1,18 +1,30 @@
+use std::fmt::format;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::str::from_utf8;
+use std::sync::atomic::AtomicBool;
+use std::sync::mpsc::{Receiver, Sender};
 use lz4_compression::prelude::decompress;
 use crate::{Data, debug, save_record_data};
 
-pub fn create_client() {
-    let args = std::env::args().collect::<Vec<String>>();
-    // if args[1] is not none we take that as the server_name else localhost
-    let default = "localhost".to_string();
-    let server_name = format!("{}:3333", args.get(1).unwrap_or(&default).to_string());
+pub const PORT: u16 = 3333;
+static CLIENT: AtomicBool = AtomicBool::new(false);
+
+pub fn client_alive() -> bool {
+    CLIENT.load(std::sync::atomic::Ordering::SeqCst)
+}
+
+pub fn create_client(server_name: String, _thread_receiver: Receiver<String>, thread_sender: Sender<String>) {
+    if CLIENT.load(std::sync::atomic::Ordering::SeqCst) {
+        return;
+    }
+    CLIENT.store(true, std::sync::atomic::Ordering::SeqCst);
+    let server_name = format!("{}:{}", server_name, PORT);
     println!("Connecting to server: {}", server_name);
-    match TcpStream::connect(server_name) {
+    match TcpStream::connect(server_name.clone()) {
         Ok(mut stream) => {
             println!("Successfully connected to server in port 3333");
+            thread_sender.send(format!("Successfully connected to server {}", server_name)).expect("Couldn't send to main thread");
 
             let msg = b"hello";
 
@@ -43,11 +55,11 @@ pub fn create_client() {
                 }
                 let mut data = vec![0u8; len as usize];
                 stream.read_exact(&mut data).unwrap();
-                debug!("Received data: {:?}", data);
+                // debug!("Received data: {:?}", data);
                 // convert back to data type
                 let data = decompress(&data).unwrap();
                 let data: Vec<Data> = bincode::deserialize(&data).unwrap();
-                debug!("Received data: {:?}", data);
+                // debug!("Received data: {:?}", data);
                 for d in data {
                     save_record_data(d);
                 }
@@ -58,4 +70,5 @@ pub fn create_client() {
         }
     }
     println!("Terminated.");
+    CLIENT.store(false, std::sync::atomic::Ordering::SeqCst);
 }

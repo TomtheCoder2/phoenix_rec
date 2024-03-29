@@ -7,6 +7,7 @@ use std::time::Duration;
 use bincode::deserialize;
 use lz4_compression::prelude::compress;
 use crate::{Data, SERVER};
+use crate::client::PORT;
 
 static DATA_QUEUE: Mutex<Vec<Data>> = Mutex::new(Vec::new());
 static STOP_SERVER: AtomicBool = AtomicBool::new(false);
@@ -91,7 +92,7 @@ pub fn create_server() {
     }
     SERVER.store(true, std::sync::atomic::Ordering::SeqCst);
     STOP_SERVER.store(false, std::sync::atomic::Ordering::SeqCst);
-    let listener = TcpListener::bind("0.0.0.0:3333").unwrap();
+    let listener = TcpListener::bind(format!("0.0.0.0:{}", PORT)).unwrap();
     // accept connections and process them, spawning a new thread for each one
     println!("Server listening on port 3333");
     for stream in listener.incoming() {

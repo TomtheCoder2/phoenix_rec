@@ -59,7 +59,7 @@ pub enum Data {
 #[derive(Debug, Clone)]
 pub struct RecData {
     /// first the format of the current data
-    data: Vec<Data>,
+    pub data: Vec<Data>,
     commands: Vec<Command>,
     start_time: u128,
     right_total_d: f32,
