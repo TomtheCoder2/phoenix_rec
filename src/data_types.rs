@@ -23,6 +23,8 @@ pub enum DataType {
     SyncError(f32),
     /// right, left
     Correction(f32, f32),
+    /// right, left
+    AverageSpeed(f32, f32),
 }
 
 impl DataType {
@@ -38,6 +40,7 @@ impl DataType {
             DataType::DrivenDistance(r, l) => format!("{}, {}", r, l),
             DataType::SyncError(e) => format!("{}", e),
             DataType::Correction(r, l) => format!("{}, {}", r, l),
+            DataType::AverageSpeed(r, l) => format!("{}, {}", r, l),
         }
     }
 
@@ -52,6 +55,7 @@ impl DataType {
             6 => 2,
             7 => 1,
             8 => 2,
+            9 => 2,
             _ => panic!("Unknown data type: {}", i),
         }
     }
@@ -67,6 +71,7 @@ impl DataType {
             DataType::DrivenDistance(_, _) => 2,
             DataType::SyncError(_) => 1,
             DataType::Correction(_, _) => 2,
+            DataType::AverageSpeed(_, _) => 2,
         }
     }
 
@@ -82,46 +87,30 @@ impl DataType {
             Some(d) => d,
             None => panic!("Unknown data type: {}", ty),
         };
+        macro_rules! ty1 {
+            ($name:ident, $ty:ty) => {{
+                let r = parts.next().unwrap().parse::<$ty>().unwrap();
+                DataType::$name(r)
+            }};
+        }
+        macro_rules! ty2 {
+            ($name:ident, $ty:ty) => {{
+                let r = parts.next().unwrap().parse::<$ty>().unwrap();
+                let l = parts.next().unwrap().parse::<$ty>().unwrap();
+                DataType::$name(r, l)
+            }};
+        }
         match data {
             DataType::None(_) => DataType::None(0),
-            DataType::Color(_, _) => {
-                let r = parts.next().unwrap().parse::<i16>().unwrap();
-                let l = parts.next().unwrap().parse::<i16>().unwrap();
-                DataType::Color(r, l)
-            }
-            DataType::Distance(_) => {
-                let d = parts.next().unwrap().parse::<i16>().unwrap();
-                DataType::Distance(d)
-            }
-            DataType::CalcSpeed(_, _) => {
-                let r = parts.next().unwrap().parse::<i16>().unwrap();
-                let l = parts.next().unwrap().parse::<i16>().unwrap();
-                DataType::CalcSpeed(r, l)
-            }
-            DataType::SyncSpeed(_, _) => {
-                let r = parts.next().unwrap().parse::<i16>().unwrap();
-                let l = parts.next().unwrap().parse::<i16>().unwrap();
-                DataType::SyncSpeed(r, l)
-            }
-            DataType::RealSpeeds(_, _) => {
-                let r = parts.next().unwrap().parse::<i16>().unwrap();
-                let l = parts.next().unwrap().parse::<i16>().unwrap();
-                DataType::RealSpeeds(r, l)
-            }
-            DataType::DrivenDistance(_, _) => {
-                let r = parts.next().unwrap().parse::<f32>().unwrap();
-                let l = parts.next().unwrap().parse::<f32>().unwrap();
-                DataType::DrivenDistance(r, l)
-            }
-            DataType::SyncError(_) => {
-                let e = parts.next().unwrap().parse::<f32>().unwrap();
-                DataType::SyncError(e)
-            }
-            DataType::Correction(_, _) => {
-                let r = parts.next().unwrap().parse::<f32>().unwrap();
-                let l = parts.next().unwrap().parse::<f32>().unwrap();
-                DataType::Correction(r, l)
-            }
+            DataType::Color(_, _) => ty2!(Color, i16),
+            DataType::Distance(_) => ty1!(Distance, i16),
+            DataType::CalcSpeed(_, _) => ty2!(CalcSpeed, i16),
+            DataType::SyncSpeed(_, _) => ty2!(SyncSpeed, i16),
+            DataType::RealSpeeds(_, _) => ty2!(RealSpeeds, i16),
+            DataType::DrivenDistance(_, _) => ty2!(DrivenDistance, f32),
+            DataType::SyncError(_) => ty1!(SyncError, f32),
+            DataType::Correction(_, _) => ty2!(Correction, f32),
+            DataType::AverageSpeed(_, _) => ty2!(AverageSpeed, f32),
         }
     }
 
@@ -137,6 +126,7 @@ impl DataType {
             DataType::DrivenDistance(_, _) => "right distance, left distance".to_string(),
             DataType::SyncError(_) => "sync error".to_string(),
             DataType::Correction(_, _) => "right correction, left correction".to_string(),
+            DataType::AverageSpeed(_, _) => "right average speed, left average speed".to_string(),
         }
     }
 }

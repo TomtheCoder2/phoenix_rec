@@ -1,11 +1,11 @@
-use std::fmt::format;
+
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::str::from_utf8;
 use std::sync::atomic::AtomicBool;
 use std::sync::mpsc::{Receiver, Sender};
 use lz4_compression::prelude::decompress;
-use crate::{Data, debug, save_record_data};
+use crate::{Data, save_record_data};
 
 pub const PORT: u16 = 3333;
 static CLIENT: AtomicBool = AtomicBool::new(false);
@@ -14,7 +14,7 @@ pub fn client_alive() -> bool {
     CLIENT.load(std::sync::atomic::Ordering::SeqCst)
 }
 
-pub fn create_client(server_name: String, _thread_receiver: Receiver<String>, thread_sender: Sender<String>) {
+pub fn create_client(server_name: String, thread_receiver: Receiver<String>, thread_sender: Sender<String>) {
     if CLIENT.load(std::sync::atomic::Ordering::SeqCst) {
         return;
     }
@@ -63,6 +63,13 @@ pub fn create_client(server_name: String, _thread_receiver: Receiver<String>, th
                 for d in data {
                     save_record_data(d);
                 }
+                // check if something has been sent over the main thread
+                if let Ok(msg) = thread_receiver.try_recv() {
+                    if msg == "exit" {
+                        stream.write(b"close").unwrap();
+                        break;
+                    }
+                }
             }
         }
         Err(e) => {
@@ -70,5 +77,6 @@ pub fn create_client(server_name: String, _thread_receiver: Receiver<String>, th
         }
     }
     println!("Terminated.");
+    thread_sender.send("Terminated".to_string()).expect("Couldn't send to main thread");
     CLIENT.store(false, std::sync::atomic::Ordering::SeqCst);
 }
