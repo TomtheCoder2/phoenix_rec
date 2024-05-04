@@ -25,6 +25,8 @@ pub enum DataType {
     Correction(f32, f32),
     /// right, left
     AverageSpeed(f32, f32),
+    /// right, left
+    RGB((i16, i16, i16), (i16, i16, i16)),
 }
 
 impl DataType {
@@ -41,6 +43,7 @@ impl DataType {
             DataType::SyncError(e) => format!("{}", e),
             DataType::Correction(r, l) => format!("{}, {}", r, l),
             DataType::AverageSpeed(r, l) => format!("{}, {}", r, l),
+            DataType::RGB((r, g, b), (r1, g1, b1)) => format!("{}, {}, {}, {}, {}, {}", r, g, b, r1, g1, b1),
         }
     }
 
@@ -56,6 +59,7 @@ impl DataType {
             7 => 1,
             8 => 2,
             9 => 2,
+            10 => 6,
             _ => panic!("Unknown data type: {}", i),
         }
     }
@@ -72,6 +76,7 @@ impl DataType {
             DataType::SyncError(_) => 1,
             DataType::Correction(_, _) => 2,
             DataType::AverageSpeed(_, _) => 2,
+            DataType::RGB(_, _) => 6,
         }
     }
 
@@ -111,6 +116,15 @@ impl DataType {
             DataType::SyncError(_) => ty1!(SyncError, f32),
             DataType::Correction(_, _) => ty2!(Correction, f32),
             DataType::AverageSpeed(_, _) => ty2!(AverageSpeed, f32),
+            DataType::RGB(_, _) => {
+                let r = parts.next().unwrap().parse::<i16>().unwrap();
+                let g = parts.next().unwrap().parse::<i16>().unwrap();
+                let b = parts.next().unwrap().parse::<i16>().unwrap();
+                let r1 = parts.next().unwrap().parse::<i16>().unwrap();
+                let g1 = parts.next().unwrap().parse::<i16>().unwrap();
+                let b1 = parts.next().unwrap().parse::<i16>().unwrap();
+                DataType::RGB((r, g, b), (r1, g1, b1))
+            }
         }
     }
 
@@ -127,6 +141,7 @@ impl DataType {
             DataType::SyncError(_) => "sync error".to_string(),
             DataType::Correction(_, _) => "right correction, left correction".to_string(),
             DataType::AverageSpeed(_, _) => "right average speed, left average speed".to_string(),
+            DataType::RGB(_, _) => "right r, right g, right b, left r, left g, left b".to_string(),
         }
     }
 }
