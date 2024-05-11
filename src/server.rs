@@ -1,13 +1,13 @@
-use std::thread;
-use std::net::{TcpListener, TcpStream, Shutdown};
-use std::io::{Read, Write};
-use std::sync::atomic::AtomicBool;
-use std::sync::Mutex;
-use std::time::Duration;
+use crate::client::PORT;
+use crate::{Data, SERVER};
 use bincode::deserialize;
 use lz4_compression::prelude::compress;
-use crate::{Data, SERVER};
-use crate::client::PORT;
+use std::io::{Read, Write};
+use std::net::{Shutdown, TcpListener, TcpStream};
+use std::sync::atomic::AtomicBool;
+use std::sync::Mutex;
+use std::thread;
+use std::time::Duration;
 
 static DATA_QUEUE: Mutex<Vec<Data>> = Mutex::new(Vec::new());
 static STOP_SERVER: AtomicBool = AtomicBool::new(false);
@@ -24,7 +24,9 @@ macro_rules! debug {
 fn handle_client(mut stream: TcpStream) {
     let mut data = [0 as u8; 50]; // using 50 byte buffer
     loop {
-        stream.set_read_timeout(Option::from(Duration::from_micros(10))).unwrap();
+        stream
+            .set_read_timeout(Option::from(Duration::from_micros(10)))
+            .unwrap();
         match stream.read(&mut data) {
             Ok(n) => {
                 if n == 0 {
@@ -32,7 +34,10 @@ fn handle_client(mut stream: TcpStream) {
                 }
                 debug!("loop");
                 // print received data
-                let text = String::from_utf8_lossy(&data).to_string().trim_matches(char::from(0)).to_string();
+                let text = String::from_utf8_lossy(&data)
+                    .to_string()
+                    .trim_matches(char::from(0))
+                    .to_string();
                 debug!("Received data: {}, len: {}", text, text.len());
                 if text == "hello" {
                     stream.write(b"hello").unwrap();
@@ -60,7 +65,8 @@ fn handle_client(mut stream: TcpStream) {
                 let mut queue = DATA_QUEUE.lock().unwrap().clone();
                 debug!("Queue: {:?}", queue);
                 let data = bincode::serialize(&queue);
-                let data_type: Vec<Data> = deserialize(&bincode::serialize(&queue).unwrap()).unwrap();
+                let data_type: Vec<Data> =
+                    deserialize(&bincode::serialize(&queue).unwrap()).unwrap();
                 debug!("Data type: {:?}", data_type);
                 debug!("Sending data: {:?}", queue);
                 match data {

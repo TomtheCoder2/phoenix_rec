@@ -1,8 +1,13 @@
-pub mod data_types;
+// This module contains various data types, client and server related code.
 pub mod client;
+pub mod data_types;
 pub mod server;
 
+// Importing necessary modules and libraries.
+use crate::server::add_data;
+use crate::Data::{RecordData, RecordDataOption};
 use data_types::DataType;
+use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display};
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -10,19 +15,16 @@ use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::SeqCst;
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
-use serde::{Deserialize, Serialize};
 use strum_macros::Display;
-use crate::Data::{RecordData, RecordDataOption};
-use crate::server::add_data;
 
-/// Directions
+/// Enum representing the direction of movement.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Display)]
 pub enum Direction {
     Left,
     Right,
 }
 
-/// `Command` public enum representing various types of commands. Includes Turn, TurnRadius, DriveDist, DriveLine, AlignDist, AlignLine, and TurnOneWheel.
+/// Enum representing various types of commands.
 #[derive(Debug, Clone, Copy)]
 pub enum Command {
     Turn(i16),
@@ -35,6 +37,7 @@ pub enum Command {
     TurnOneWheel(i16, Direction),
 }
 
+// Implementing Display trait for Command enum.
 impl Display for Command {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -49,6 +52,7 @@ impl Display for Command {
     }
 }
 
+// Enum representing different types of data.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Display)]
 pub enum Data {
     Command(String),
@@ -56,6 +60,7 @@ pub enum Data {
     RecordDataOption(u128, Vec<Option<DataType>>),
 }
 
+// Struct representing recorded data.
 #[derive(Debug, Clone)]
 pub struct RecData {
     /// first the format of the current data
@@ -67,12 +72,14 @@ pub struct RecData {
     first_time: bool,
 }
 
+// Implementing Default trait for RecData struct.
 impl Default for RecData {
     fn default() -> Self {
         Self::new()
     }
 }
 
+// Implementing methods for RecData struct.
 impl RecData {
     const fn new() -> Self {
         Self {
@@ -86,18 +93,23 @@ impl RecData {
     }
 }
 
+// Mutex for RecData and AtomicBool for server.
 static REC_DATA: Mutex<RecData> = Mutex::new(RecData::new());
 static SERVER: AtomicBool = AtomicBool::new(false);
 
+// Function to set the server status.
 pub fn set_server(b: bool) {
     SERVER.store(b, SeqCst);
 }
-/// stands for lock_mutex
+
+// Macro to lock the mutex.
 macro_rules! lm {
     ($mutex:expr) => {
         $mutex.lock().expect("Mutex poisoned")
     };
 }
+
+// Various functions to get and manipulate RecData.
 pub fn get_rec_data() -> RecData {
     lm!(REC_DATA).clone()
 }
@@ -120,19 +132,21 @@ pub fn add_command(command: Command) {
     lm!(REC_DATA).data.push(Data::Command(command.to_string()));
 }
 
-/// Connects all the elements from COMMANDS to one string in the following format:<br>
-/// data_command1(data1,data2,data3)_command2(data1,data2,data3)_...
+pub fn add_comment(comment: String) {
+    lm!(REC_DATA).data.push(Data::Command(comment));
+}
+
 pub fn get_data_name() -> String {
     println!("COMMANDS: {:?}", lm!(REC_DATA).commands);
     "data_".to_string()
         + &*lm!(REC_DATA)
-        .commands
-        .iter()
-        .map(|c| c.to_string())
-        .collect::<Vec<String>>()
-        .join("_")
-        .replace(' ', "")
-        .to_string()
+            .commands
+            .iter()
+            .map(|c| c.to_string())
+            .collect::<Vec<String>>()
+            .join("_")
+            .replace(' ', "")
+            .to_string()
 }
 
 pub fn save_data(mut data: Vec<DataType>) {
@@ -168,7 +182,9 @@ pub fn save_data(mut data: Vec<DataType>) {
             - start_time,
         data.clone(),
     );
-    if SERVER.load(SeqCst) { add_data(rec_data.clone()); }
+    if SERVER.load(SeqCst) {
+        add_data(rec_data.clone());
+    }
     lm!(REC_DATA).data.push(rec_data);
 }
 
@@ -247,12 +263,11 @@ pub fn write_data(file_name: String) {
                 .collect::<Vec<String>>()
                 .join(", ")
         )
-            .as_bytes(),
+        .as_bytes(),
     )
-        .unwrap();
+    .unwrap();
     file.write_all(b"# Phoenix data\n").unwrap();
     // todo: write time and date in this format: hh:mm:ss dd.mm.yyyy
-
 
     file.write_all(format!("# {}\n", get_data_name()).as_bytes())
         .unwrap();
@@ -291,9 +306,9 @@ pub fn write_data(file_name: String) {
                             .collect::<Vec<String>>()
                             .join(", ")
                     )
-                        .as_bytes(),
+                    .as_bytes(),
                 )
-                    .unwrap();
+                .unwrap();
             }
             Data::Command(s) => {
                 file.write_all(format!("# {}\n", s).as_bytes()).unwrap();

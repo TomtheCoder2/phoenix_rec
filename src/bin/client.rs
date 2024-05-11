@@ -8,6 +8,10 @@ fn main() {
     let default = "localhost".to_string();
     let (_main_sender, thread_receiver) = std::sync::mpsc::channel();
     let (thread_sender, _main_receiver) = std::sync::mpsc::channel();
-    create_client(args.get(1).unwrap_or(&default).to_string(), thread_receiver, thread_sender);
-    loop { }
+    create_client(
+        args.get(1).unwrap_or(&default).to_string(),
+        thread_receiver,
+        thread_sender,
+    );
+    loop {}
 }

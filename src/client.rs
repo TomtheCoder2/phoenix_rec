@@ -1,11 +1,10 @@
-
+use crate::{save_record_data, Data};
+use lz4_compression::prelude::decompress;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::str::from_utf8;
 use std::sync::atomic::AtomicBool;
 use std::sync::mpsc::{Receiver, Sender};
-use lz4_compression::prelude::decompress;
-use crate::{Data, save_record_data};
 
 pub const PORT: u16 = 3333;
 static CLIENT: AtomicBool = AtomicBool::new(false);
@@ -14,7 +13,11 @@ pub fn client_alive() -> bool {
     CLIENT.load(std::sync::atomic::Ordering::SeqCst)
 }
 
-pub fn create_client(server_name: String, thread_receiver: Receiver<String>, thread_sender: Sender<String>) {
+pub fn create_client(
+    server_name: String,
+    thread_receiver: Receiver<String>,
+    thread_sender: Sender<String>,
+) {
     if CLIENT.load(std::sync::atomic::Ordering::SeqCst) {
         return;
     }
@@ -24,7 +27,9 @@ pub fn create_client(server_name: String, thread_receiver: Receiver<String>, thr
     match TcpStream::connect(server_name.clone()) {
         Ok(mut stream) => {
             println!("Successfully connected to server in port 3333");
-            thread_sender.send(format!("Successfully connected to server {}", server_name)).expect("Couldn't send to main thread");
+            thread_sender
+                .send(format!("Successfully connected to server {}", server_name))
+                .expect("Couldn't send to main thread");
 
             let msg = b"hello";
 
@@ -77,6 +82,8 @@ pub fn create_client(server_name: String, thread_receiver: Receiver<String>, thr
         }
     }
     println!("Terminated.");
-    thread_sender.send("Terminated".to_string()).expect("Couldn't send to main thread");
+    thread_sender
+        .send("Terminated".to_string())
+        .expect("Couldn't send to main thread");
     CLIENT.store(false, std::sync::atomic::Ordering::SeqCst);
 }

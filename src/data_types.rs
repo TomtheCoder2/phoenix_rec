@@ -43,7 +43,9 @@ impl DataType {
             DataType::SyncError(e) => format!("{}", e),
             DataType::Correction(r, l) => format!("{}, {}", r, l),
             DataType::AverageSpeed(r, l) => format!("{}, {}", r, l),
-            DataType::RGB((r, g, b), (r1, g1, b1)) => format!("{}, {}, {}, {}, {}, {}", r, g, b, r1, g1, b1),
+            DataType::RGB((r, g, b), (r1, g1, b1)) => {
+                format!("{}, {}, {}, {}, {}, {}", r, g, b, r1, g1, b1)
+            }
         }
     }
 
