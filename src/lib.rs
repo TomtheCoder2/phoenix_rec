@@ -325,5 +325,7 @@ pub fn clear_data() {
 }
 /// This Function deletes the first n entries from the data, but keeps the rest.
 pub fn delete_data(n: usize) {
-    lm!(REC_DATA).data.drain(0..n);
+    if n < lm!(REC_DATA).data.len() {
+        lm!(REC_DATA).data.drain(0..n);
+    }
 }
