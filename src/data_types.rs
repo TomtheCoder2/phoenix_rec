@@ -27,6 +27,8 @@ pub enum DataType {
     AverageSpeed(f32, f32),
     /// right, left
     RGB((i16, i16, i16), (i16, i16, i16)),
+    /// cur_speed, target_speed
+    CurTarSpeeds(i16, i16),
 }
 
 impl DataType {
@@ -46,6 +48,7 @@ impl DataType {
             DataType::RGB((r, g, b), (r1, g1, b1)) => {
                 format!("{}, {}, {}, {}, {}, {}", r, g, b, r1, g1, b1)
             }
+            DataType::CurTarSpeeds(c, t) => format!("{}, {}", c, t),
         }
     }
 
@@ -62,6 +65,7 @@ impl DataType {
             8 => 2,
             9 => 2,
             10 => 6,
+            11 => 2,
             _ => panic!("Unknown data type: {}", i),
         }
     }
@@ -79,6 +83,7 @@ impl DataType {
             DataType::Correction(_, _) => 2,
             DataType::AverageSpeed(_, _) => 2,
             DataType::RGB(_, _) => 6,
+            DataType::CurTarSpeeds(_, _) => 2,
         }
     }
 
@@ -127,6 +132,7 @@ impl DataType {
                 let b1 = parts.next().unwrap().parse::<i16>().unwrap();
                 DataType::RGB((r, g, b), (r1, g1, b1))
             }
+            DataType::CurTarSpeeds(_, _) => ty2!(CurTarSpeeds, i16),
         }
     }
 
@@ -144,6 +150,7 @@ impl DataType {
             DataType::Correction(_, _) => "right correction, left correction".to_string(),
             DataType::AverageSpeed(_, _) => "right average speed, left average speed".to_string(),
             DataType::RGB(_, _) => "right r, right g, right b, left r, left g, left b".to_string(),
+            DataType::CurTarSpeeds(_, _) => "current speed, target speed".to_string(),
         }
     }
 }
