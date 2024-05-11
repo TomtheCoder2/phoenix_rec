@@ -323,3 +323,7 @@ pub fn write_data(file_name: String) {
 pub fn clear_data() {
     *lm!(REC_DATA) = RecData::default();
 }
+/// This Function deletes the first n entries from the data, but keeps the rest.
+pub fn delete_data(n: usize) {
+    lm!(REC_DATA).data.drain(0..n);
+}
