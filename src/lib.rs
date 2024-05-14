@@ -16,6 +16,7 @@ use std::sync::atomic::Ordering::SeqCst;
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 use strum_macros::Display;
+use whoami::fallible;
 
 /// Enum representing the direction of movement.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Display)]
@@ -271,9 +272,9 @@ pub fn write_data(file_name: String) {
     // Get current time, date and the name of the current user and format it in a nice way
     let now = chrono::Local::now();
     let user = whoami::username();
-    let machine_name = whoami::hostname();
+    let machine_name = fallible::hostname().unwrap_or_else(|_| "unknown".to_string());
     file.write_all(format!(
-        "println!(\"Compiled on {} at {} by {} on {}\");",
+        "# Created on {} at {} by {} on {}\n",
         now.format("%d-%m-%Y"),
         now.format("%H:%M:%S"),
         user,
