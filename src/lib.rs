@@ -268,7 +268,17 @@ pub fn write_data(file_name: String) {
     .unwrap();
     file.write_all(b"# Phoenix data\n").unwrap();
     // todo: write time and date in this format: hh:mm:ss dd.mm.yyyy
-
+    // Get current time, date and the name of the current user and format it in a nice way
+    let now = chrono::Local::now();
+    let user = whoami::username();
+    let machine_name = whoami::hostname();
+    file.write_all(format!(
+        "println!(\"Compiled on {} at {} by {} on {}\");",
+        now.format("%d-%m-%Y"),
+        now.format("%H:%M:%S"),
+        user,
+        machine_name
+    ).as_bytes()).unwrap();
     file.write_all(format!("# {}\n", get_data_name()).as_bytes())
         .unwrap();
     // todo reimplement this
