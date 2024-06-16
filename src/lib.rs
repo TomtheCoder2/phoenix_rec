@@ -150,6 +150,20 @@ pub fn get_data_name() -> String {
             .to_string()
 }
 
+pub fn get_time() -> Option<u128> {
+    if lm!(REC_DATA).start_time == 0 {
+        None
+    } else {
+        Some(
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+                - lm!(REC_DATA).start_time,
+        )
+    }
+}
+
 pub fn save_data(mut data: Vec<DataType>) {
     if lm!(REC_DATA).start_time == 0 {
         lm!(REC_DATA).start_time = SystemTime::now()

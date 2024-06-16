@@ -29,6 +29,7 @@ pub enum DataType {
     RGB((i16, i16, i16), (i16, i16, i16)),
     /// cur_speed, target_speed
     CurTarSpeeds(i16, i16),
+    // todo: add custom data type for the user to use and define
 }
 
 impl DataType {
