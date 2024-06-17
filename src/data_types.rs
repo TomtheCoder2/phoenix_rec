@@ -29,6 +29,7 @@ pub enum DataType {
     RGB((i16, i16, i16), (i16, i16, i16)),
     /// cur_speed, target_speed
     CurTarSpeeds(i16, i16),
+    InstantDerivative(f32)
     // todo: add custom data type for the user to use and define
 }
 
@@ -50,6 +51,7 @@ impl DataType {
                 format!("{}, {}, {}, {}, {}, {}", r, g, b, r1, g1, b1)
             }
             DataType::CurTarSpeeds(c, t) => format!("{}, {}", c, t),
+            DataType::InstantDerivative(d) => format!("{}", d)
         }
     }
 
@@ -67,6 +69,7 @@ impl DataType {
             9 => 2,
             10 => 6,
             11 => 2,
+            12 => 1,
             _ => panic!("Unknown data type: {}", i),
         }
     }
@@ -85,6 +88,7 @@ impl DataType {
             DataType::AverageSpeed(_, _) => 2,
             DataType::RGB(_, _) => 6,
             DataType::CurTarSpeeds(_, _) => 2,
+            DataType::InstantDerivative(_) => 1
         }
     }
 
@@ -134,6 +138,7 @@ impl DataType {
                 DataType::RGB((r, g, b), (r1, g1, b1))
             }
             DataType::CurTarSpeeds(_, _) => ty2!(CurTarSpeeds, i16),
+            DataType::InstantDerivative(_) => ty1!(InstantDerivative, f32)
         }
     }
 
@@ -152,6 +157,7 @@ impl DataType {
             DataType::AverageSpeed(_, _) => "right average speed, left average speed".to_string(),
             DataType::RGB(_, _) => "right r, right g, right b, left r, left g, left b".to_string(),
             DataType::CurTarSpeeds(_, _) => "current speed, target speed".to_string(),
+            DataType::InstantDerivative(_) => "instant derivative".to_string()
         }
     }
 }
